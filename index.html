@@ -280,53 +280,78 @@ try {
     hoveredId = null;
   });
 
-  // Click popup with standardized attributes
-  map.on('click', 'thematic-fill', (e) => {
-    const props = e.features[0].properties || {};
+// Click popup with standardized attributes
+map.on('click', 'thematic-fill', (e) => {
+  const props = e.features[0].properties || {};
 
-    const name = props.Name || 'Unnamed Feature';
-    const desc = props.Desc || '';
-    const longDesc = props.LongDesc || '';
-    const image = props.Image || '';
-    const link = props.Link || '';
+  const id = props.ID || '';
+  const name = props.Name || 'Unnamed Feature';
+  const type = props.Type || '';
+  const desc = props.Desc || '';
+  const longDesc = props.LongDesc || '';
+  const image = props.Image || '';
+  const link = props.Link || '';
 
-    // Gallery can be JSON array or comma-separated string
-    let galleryItems = [];
-    if (props.Gallery) {
-      try {
-        const parsed = JSON.parse(props.Gallery);
-        if (Array.isArray(parsed)) galleryItems = parsed;
-      } catch {
-        galleryItems = String(props.Gallery).split(/[;,]\s*/).filter(Boolean);
-      }
+  // Parse Gallery field (JSON array of URLs)
+  let galleryItems = [];
+  if (props.Gallery) {
+    try {
+      const parsed = JSON.parse(props.Gallery);
+      if (Array.isArray(parsed)) galleryItems = parsed;
+    } catch {
+      // fallback if it's not valid JSON
+      galleryItems = String(props.Gallery).split(/[;,]\s*/).filter(Boolean);
     }
+  }
 
-    const galleryLinkHTML = galleryItems.length > 0
-      ? `<p><a href="javascript:void(0)" onclick="Fancybox.show(${JSON.stringify(
-          galleryItems.map(u => ({ src: u, type: 'image', caption: longDesc || desc || name }))
-        )})">Open gallery</a></p>`
-      : '';
+  // Build popup HTML
+  const imageHTML = image
+    ? `<img src="${image}" alt="${name}" style="max-width:100%; margin:6px 0;">`
+    : '';
 
-    const imageHTML = image
-      ? `<img src="${image}" alt="${name}" style="max-width:100%; margin:6px 0;">`
-      : '';
+  const descHTML = desc ? `<p>${desc}</p>` : '';
+  const longDescHTML = longDesc ? `<p>${longDesc}</p>` : '';
+  const linkHTML = link ? `<p><a href="${link}" target="_blank" rel="noopener">More info</a></p>` : '';
 
-    const descHTML = desc ? `<p>${desc}</p>` : '';
-    const longDescHTML = longDesc ? `<p>${longDesc}</p>` : '';
-    const linkHTML = link ? `<p><a href="${link}" target="_blank" rel="noopener">More info</a></p>` : '';
+  const galleryLinkHTML = galleryItems.length > 0
+    ? `<p><a href="#" class="open-gallery">Open gallery</a></p>`
+    : '';
 
-    new maplibregl.Popup()
-      .setLngLat(e.lngLat)
-      .setHTML(`
-        <h3>${name}</h3>
-        ${imageHTML}
-        ${descHTML}
-        ${longDescHTML}
-        ${galleryLinkHTML}
-        ${linkHTML}
-      `)
-      .addTo(map);
+  new maplibregl.Popup({
+      closeButton: true,
+      closeOnClick: true,
+      anchor: 'auto',       // auto‑flip to stay inside map
+      maxWidth: '300px'     // prevent overly wide popups
+    })
+    .setLngLat(e.lngLat)
+    .setHTML(`
+      <h3>${name}</h3>
+      ${type ? `<p><em>${type}</em></p>` : ''}
+      ${imageHTML}
+      ${descHTML}
+      ${longDescHTML}
+      ${galleryLinkHTML}
+      ${linkHTML}
+    `)
+    .addTo(map);
+
+  // Attach Fancybox after popup is added
+  map.once('popupopen', () => {
+    const linkEl = document.querySelector('.mapboxgl-popup .open-gallery');
+    if (linkEl) {
+      linkEl.addEventListener('click', ev => {
+        ev.preventDefault();
+        Fancybox.show(
+          galleryItems.map(u => ({
+            src: u,
+            type: 'image',
+            caption: `<strong>${name}</strong><br>${longDesc || desc || ''}`
+          }))
+        );
+      });
+    }
   });
+});
 
   map.on('mouseenter', 'thematic-fill', () => {
     map.getCanvas().style.cursor = 'pointer';
