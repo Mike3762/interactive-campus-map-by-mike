@@ -175,6 +175,12 @@
 <script src="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.js"></script>
 <!-- Fancybox v4 JS -->
 <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@4/dist/fancybox.umd.js"></script>
+
+
+
+
+
+
 <script>
 try {
   const imageBounds = [
@@ -200,7 +206,7 @@ try {
         },
         thematic: {
           type: 'vector',
-          tiles: ['https://mike3762.github.io/thematic-layer/thematic_layer/{z}/{x}/{y}.pbf'], // replace with your server URL
+          tiles: ['https://mike3762.github.io/thematic-layer/thematic_layer/{z}/{x}/{y}.pbf'],
           minzoom: 14,
           maxzoom: 20
         }
@@ -211,7 +217,7 @@ try {
           id: 'thematic-fill',
           type: 'fill',
           source: 'thematic',
-          'source-layer': 'thematic_layer', // use your QGIS export layer name
+          'source-layer': 'thematic_layer',
           paint: { 'fill-color': '#3388ff', 'fill-opacity': 1 }
         },
         {
@@ -223,23 +229,22 @@ try {
         }
       ]
     },
-    center: [78.8039, 30.226], // lon, lat in degrees
+    center: [78.8039, 30.226],
     zoom: 15,
     maxBounds: imageBounds
   });
 
   map.on('load', () => {
-    //map.fitBounds(imageBounds, { padding: 20, animate: false });
-      map.fitBounds(
-    [
-      [78.7832, 30.2080], // SW corner (approx 2 km radius around your center)
-      [78.8246, 30.2440]  // NE corner
-    ],
-    { padding: 20, animate: false }
-  );
-});
+    map.fitBounds(
+      [
+        [78.7832, 30.2080],
+        [78.8246, 30.2440]
+      ],
+      { padding: 20, animate: false }
+    );
+  });
 
-  // Hover highlight logic
+  // Hover highlight
   let hoveredId = null;
   map.on('mousemove', 'thematic-fill', (e) => {
     if (e.features.length > 0) {
@@ -256,16 +261,10 @@ try {
       );
 
       map.setPaintProperty('thematic-fill', 'fill-opacity', [
-        'case',
-        ['boolean', ['feature-state', 'hover'], false],
-        0.7,
-        0.3 // not hovered remove later.
+        'case', ['boolean', ['feature-state', 'hover'], false], 0.7, 0.3
       ]);
       map.setPaintProperty('thematic-outline', 'line-width', [
-        'case',
-        ['boolean', ['feature-state', 'hover'], false],
-        2,
-        0
+        'case', ['boolean', ['feature-state', 'hover'], false], 2, 0
       ]);
     }
   });
@@ -280,105 +279,119 @@ try {
     hoveredId = null;
   });
 
+  // Track the active popup globally
+  let activePopup = null;
 
+  // CLICK: build popup with one clean "Open Gallery" link
+  map.on('click', 'thematic-fill', (e) => {
+    if (!e.features || !e.features[0]) return;
+    const props = e.features[0].properties || {};
 
+    const name = props.Name || 'Unnamed Feature';
+    const type = props.Type || '';
+    const desc = props.Desc || '';
+    const longDesc = props.LongDesc || '';
+    const image = props.Image || '';
+    const link = props.Link || '';
 
-// Click popup with standardized attributes
-// Track the active popup globally
-let activePopup = null;
-
-map.on('click', 'thematic-fill', (e) => {
-  const props = e.features[0].properties || {};
-
-  const name = props.Name || 'Unnamed Feature';
-  const type = props.Type || '';
-  const desc = props.Desc || '';
-  const longDesc = props.LongDesc || '';
-  const image = props.Image || '';
-  const link = props.Link || '';
-
-  // Parse Gallery field
-  let galleryItems = [];
-  if (props.Gallery) {
+    // Parse gallery
+    let galleryItems = [];
+    const g = props.Gallery;
     try {
-      const parsed = JSON.parse(props.Gallery);
-      if (Array.isArray(parsed)) galleryItems = parsed;
+      if (Array.isArray(g)) {
+        galleryItems = g;
+      } else if (typeof g === 'string') {
+        const s = g.trim();
+        if (s.startsWith('[') && s.endsWith(']')) {
+          const parsed = JSON.parse(s);
+          if (Array.isArray(parsed)) galleryItems = parsed;
+        } else {
+          galleryItems = s.split(/[,\n;]\s*/).filter(Boolean);
+        }
+      }
     } catch {
-      galleryItems = String(props.Gallery).split(/[;,]\s*/).filter(Boolean);
+      galleryItems = String(g ?? '').split(/[,\n;]\s*/).filter(Boolean);
     }
-  }
 
-  // Always close the previous popup
-  if (activePopup) {
-    activePopup.remove();
-    activePopup = null;
-  }
+    // Close the previous popup and any Fancybox modal
+    if (activePopup) {
+      activePopup.remove();
+      activePopup = null;
+    }
+    if (Fancybox.getInstance()) {
+      document.activeElement?.blur();
+      Fancybox.close(true); // close instantly, skip animation
+    }
 
-  // Build popup HTML
-  const imageHTML = image
-    ? `<img src="${image}" alt="${name}" style="max-width:100%; margin:6px 0;">`
-    : '';
-  const descHTML = desc ? `<p>${desc}</p>` : '';
-  const longDescHTML = longDesc ? `<p>${longDesc}</p>` : '';
-  const linkHTML = link ? `<p><a href="${link}" target="_blank" rel="noopener">More info</a></p>` : '';
-  const galleryLinkHTML = galleryItems.length > 0
-    ? `<p><a href="#" class="open-gallery">Open gallery</a></p>`
-    : '';
+    const caption = `<strong>${name}</strong><br>${longDesc || desc || ''}`;
+    const galleryHTML = galleryItems.length
+      ? `
+        <p>
+          <a href="${galleryItems[0]}" data-fancybox="gallery-${name}" data-caption="${caption}">
+            Open Gallery
+          </a>
+        </p>
+        <div style="display:none;">
+          ${galleryItems.slice(1).map(u =>
+            `<a href="${u}" data-fancybox="gallery-${name}" data-caption="${caption}"></a>`
+          ).join('')}
+        </div>
+      `
+      : `<p style="opacity:0.7"><em>No gallery available</em></p>`;
 
-  // Create popup
-  activePopup = new maplibregl.Popup({
-      closeButton: true,
-      closeOnClick: true,
-      anchor: 'auto',
-      maxWidth: '300px'
-    })
-    .setLngLat(e.lngLat)
-    .setHTML(`
-      <h3>${name}</h3>
-      ${type ? `<p><em>${type}</em></p>` : ''}
-      ${imageHTML}
-      ${descHTML}
-      ${longDescHTML}
-      ${galleryLinkHTML}
-      ${linkHTML}
-    `)
-    .addTo(map);
+    const imageHTML = image ? `<img src="${image}" alt="${name}" style="max-width:100%; margin:6px 0;">` : '';
+    const descHTML = desc ? `<p>${desc}</p>` : '';
+    const longDescHTML = longDesc ? `<p>${longDesc}</p>` : '';
+    const linkHTML = link ? `<p><a href="${link}" target="_blank" rel="noopener">More info</a></p>` : '';
 
-  // Attach Fancybox handler directly to this popup’s DOM
-  const popupEl = activePopup.getElement();
-  const linkEl = popupEl.querySelector('.open-gallery');
-  if (linkEl) {
-    linkEl.addEventListener('click', (ev) => {
-      ev.preventDefault();
-      console.log("Fancybox triggered for:", name, "with items:", galleryItems);
-      if (galleryItems.length === 0) return;
-      Fancybox.show(
-        galleryItems.map((u) => ({
-          src: u,
-          type: 'image',
-          caption: `<strong>${name}</strong><br>${longDesc || desc || ''}`
-        }))
-      );
+    // Defer popup creation to next animation frame for stability
+    requestAnimationFrame(() => {
+      activePopup = new maplibregl.Popup({
+          closeButton: true,
+          closeOnClick: true,
+          anchor: 'auto',
+          maxWidth: '300px'
+        })
+        .setLngLat(e.lngLat)
+        .setHTML(`
+          <div class="popup-content">
+            <h3>${name}</h3>
+            ${type ? `<p><em>${type}</em></p>` : ''}
+            ${imageHTML}
+            ${descHTML}
+            ${longDescHTML}
+            ${galleryHTML}
+            ${linkHTML}
+          </div>
+        `)
+        .addTo(map);
+
+      // Bind Fancybox to this popup’s content
+      const popupEl = activePopup.getElement();
+      const contentEl = popupEl.querySelector('.popup-content') || popupEl;
+      Fancybox.bind(contentEl, '[data-fancybox]', {});
     });
-  }
-});
-
-
-
-
-
-
-
-  map.on('mouseenter', 'thematic-fill', () => {
-    map.getCanvas().style.cursor = 'pointer';
   });
-  map.on('mouseleave', 'thematic-fill', () => {
-    map.getCanvas().style.cursor = '';
-  });
+
+  // Cursor changes
+  map.on('mouseenter', 'thematic-fill', () => { map.getCanvas().style.cursor = 'pointer'; });
+  map.on('mouseleave', 'thematic-fill', () => { map.getCanvas().style.cursor = ''; });
 
 } catch (err) {
   console.error('Map initialization failed:', err);
 }
 </script>
+
+
+
+
+
+
+
+
+
+
+
+
 </body>
 </html>
