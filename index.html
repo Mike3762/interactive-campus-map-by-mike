@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
+  <meta charset="utf-8">
   <title>Interactive Map of Chauras Campus</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Interactive campus map of HNBGU Chauras campus">
@@ -10,81 +10,168 @@
   <link href="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.css" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@4/dist/fancybox.css" />
 
-  <style>
-    body { margin: 0; padding: 0; display: flex; flex-direction: column; min-height: 100vh; }
+<style>
+  body {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
 
-    /* Header */
-    .hnbgu-header {
-      display: flex; align-items: center; gap: 15px;
-      padding: 6px 15px;
-      background: linear-gradient(90deg, #006400, #00a86b);
-      color: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-    }
-    .hnbgu-header .logo { height: 50px; }
-    .title-block { display: flex; flex-direction: column; line-height: 1.2; }
-    .title-hindi { font-size: 16px; font-weight: bold; }
-    .title-english { font-size: 18px; font-weight: bold; border-bottom: 2px solid rgba(255,255,255,0.7); padding-bottom: 2px; }
-    .subtitle { font-size: 13px; font-style: italic; }
+  /* Header */
+  .hnbgu-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 6px 15px;
+    background: linear-gradient(90deg, #006400, #00a86b);
+    color: #fff;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
 
-    .map-title-banner {
-      background: linear-gradient(90deg, #004d00, #00a86b);
-      color: #fff; text-align: center;
-      font-size: 16px; font-weight: bold;
-      padding: 6px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-      letter-spacing: 0.5px;
-    }
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+  .hnbgu-header .logo { height: 50px; }
+  .title-block { display: flex; flex-direction: column; line-height: 1.2; }
+  .title-hindi { font-size: 16px; font-weight: bold; }
+  .title-english {
+    font-size: 18px;
+    font-weight: bold;
+    border-bottom: 2px solid rgba(255,255,255,0.7);
+    padding-bottom: 2px;
+  }
+  .subtitle { font-size: 13px; font-style: italic; }
 
-    .main-layout { display: flex; flex: 1; min-height: 0; }
+  .map-title-banner {
+    background: linear-gradient(90deg, #004d00, #00a86b);
+    color: #fff;
+    text-align: center;
+    font-size: 16px;
+    font-weight: bold;
+    padding: 6px 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    letter-spacing: 0.5px;
+  }
 
-    /* Side panels */
-    .departments-panel, .legend-panel {
-      width: 220px; background: #f9f9f9;
-      padding: 10px;
-      overflow-y: auto;
-      max-height: calc(100vh - 150px);
-    }
-    .departments-panel { border-right: 2px solid #ccc; }
-    .legend-panel { border-left: 2px solid #ccc; }
-    .departments-panel h3, .legend-panel h3 { margin-top: 0; }
+  .main-layout {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+  }
 
-    /* Map container */
-    .map-container {
-      flex: 1;
-      border: 3px solid #006400;
-      margin: 5px;
-      box-shadow: 0 0 8px rgba(0,0,0,0.2);
-      display: flex;
-    }
-    #map { flex: 1; }
+  /* Side panels */
+  .departments-panel,
+  .legend-panel {
+    width: 220px;
+    background: #f9f9f9;
+    padding: 10px;
+    overflow-y: auto;
+    max-height: calc(100vh - 150px);
+    position: relative; /* needed for toggle-tab positioning */
 
-    /* Legend list */
-    .legend-panel ul { list-style: none; padding: 0; margin: 0; }
-    .legend-panel li { display: flex; align-items: center; margin-bottom: 6px; }
-    .legend-color { width: 18px; height: 18px; margin-right: 8px; border: 1px solid #333; }
+    scrollbar-width: thin;
+    scrollbar-color: #888 #f9f9f9;
+  }
+  .departments-panel::-webkit-scrollbar,
+  .legend-panel::-webkit-scrollbar {
+    width: 8px;
+  }
+  .departments-panel::-webkit-scrollbar-thumb,
+  .legend-panel::-webkit-scrollbar-thumb {
+    background: #888;
+  }
 
-    footer {
-      background: linear-gradient(90deg, #006400, #00a86b);
-      color: #fff; padding: 10px; text-align: center;
-      font-size: 14px; position: sticky; bottom: 0;
-      box-shadow: 0 -2px 6px rgba(0,0,0,0.2);
-    }
-    footer p { margin: 0; }
+  .departments-panel { border-right: 2px solid #ccc; }
+  .legend-panel { border-left: 2px solid #ccc; }
+  .departments-panel h3,
+  .legend-panel h3 { margin-top: 0; }
 
-    .maplibregl-popup-content img { max-width: 100%; height: auto; }
+  /* Map container */
+  .map-container {
+    flex: 1;
+    border: 3px solid #006400;
+    margin: 5px;
+    box-shadow: 0 0 8px rgba(0,0,0,0.2);
+    display: flex;
+  }
+  #map { flex: 1; }
 
-    /* Force the map canvas to always use the arrow cursor */
-    .maplibregl-canvas {
-      cursor: default !important;
-    }
+  /* Legend list */
+  .legend-panel ul { list-style: none; padding: 0; margin: 0; }
+  .legend-panel li { display: flex; align-items: center; margin-bottom: 6px; }
+  .legend-color {
+    width: 18px;
+    height: 18px;
+    margin-right: 8px;
+    border: 1px solid #333;
+  }
 
-    /* Cursor settings */
-    #map {
-      cursor: default;
-    }
-    #map:active {
-      cursor: default;
-    }
-  </style>
+  footer {
+    background: linear-gradient(90deg, #006400, #00a86b);
+    color: #fff;
+    padding: 10px;
+    text-align: center;
+    font-size: 14px;
+    position: sticky;
+    bottom: 0;
+    box-shadow: 0 -2px 6px rgba(0,0,0,0.2);
+  }
+  footer p { margin: 0; }
+
+  .maplibregl-popup-content img { max-width: 100%; height: auto; }
+
+  .maplibregl-canvas { cursor: default !important; }
+  #map { cursor: default; }
+  #map:active { cursor: default; }
+
+  /* Panel header */
+  .panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  /* Toggle buttons */
+  .toggle-btn {
+    align-self: flex-start;       /* align with top of panels */
+    margin-top: 10px;             /* small spacing from top */
+    width: 28px;
+    height: 28px;
+    line-height: 26px;
+    text-align: center;
+    background: #006400;
+    color: #fff;
+    font-weight: bold;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    user-select: none;
+    z-index: 10;
+    box-shadow: 0 0 4px rgba(0,0,0,0.3);
+  }
+
+  /* Left toggle sits between left panel and map */
+  .left-toggle { margin-right: 4px; }
+
+  /* Right toggle sits between map and right panel */
+  .right-toggle { margin-left: 4px; }
+
+  /* Collapsed panels */
+  .departments-panel.collapsed,
+  .legend-panel.collapsed {
+    width: 0;
+    padding: 0;
+    border: none;
+    overflow: hidden;
+  }
+</style>
+
+
+
+
 </head>
 <body>
 
@@ -104,7 +191,9 @@
 <div class="main-layout">
   <!-- Left: Departments -->
   <aside class="departments-panel">
-    <h3>Landmarks</h3>
+    <div class="panel-header">
+      <h3>Landmarks</h3>
+    </div>
     <ol>
       <li>Department of Forestry and Natural Resources</li>
       <li>Department of Horticulture</li>
@@ -138,14 +227,22 @@
     </ol>
   </aside>
 
+  <!-- Toggle button for left panel -->
+  <button class="toggle-btn left-toggle" onclick="togglePanel('departments-panel')">⟨</button>
+
   <!-- Center: Map -->
   <div class="map-container">
     <div id="map"></div>
   </div>
 
+  <!-- Toggle button for right panel -->
+  <button class="toggle-btn right-toggle" onclick="togglePanel('legend-panel')">⟩</button>
+
   <!-- Right: Legend -->
   <aside class="legend-panel">
-    <h3>Legend</h3>
+    <div class="panel-header">
+      <h3>Legend</h3>
+    </div>
     <ul>
       <li><span class="legend-color" style="background:#FFEC5C;"></span> Departments</li>
       <li><span class="legend-color" style="background:#F5CA7A;"></span> Hostels</li>
@@ -161,6 +258,7 @@
     </ul>
   </aside>
 </div>
+
 
 <footer>
   <p>
@@ -374,7 +472,7 @@ try {
   });
 
   // Cursor changes
-  map.on('mouseenter', 'thematic-fill', () => { map.getCanvas().style.cursor = 'pointer'; });
+  map.on('mouseenter', 'thematic-fill', () => { map.getCanvas().style.cursor = 'default'; });
   map.on('mouseleave', 'thematic-fill', () => { map.getCanvas().style.cursor = ''; });
 
 } catch (err) {
@@ -385,7 +483,39 @@ try {
 
 
 
+<script> // toggle panel
+function togglePanel(panelClass) {
+  const panel = document.querySelector('.' + panelClass);
+  if (!panel) return;
 
+  // find the corresponding toggle button
+  let button;
+  if (panelClass === 'departments-panel') {
+    button = document.querySelector('.left-toggle');
+  } else if (panelClass === 'legend-panel') {
+    button = document.querySelector('.right-toggle');
+  }
+
+  // toggle collapsed state
+  panel.classList.toggle('collapsed');
+
+  // flip the arrow
+  if (button) {
+    if (panel.classList.contains('collapsed')) {
+      // panel is hidden → arrow points inward
+      button.textContent = (panelClass === 'departments-panel') ? '⟩' : '⟨';
+    } else {
+      // panel is visible → arrow points outward
+      button.textContent = (panelClass === 'departments-panel') ? '⟨' : '⟩';
+    }
+  }
+
+  // resize map
+  if (window.map) {
+    setTimeout(() => map.resize(), 300);
+  }
+}
+</script>
 
 
 
