@@ -280,11 +280,16 @@ try {
     hoveredId = null;
   });
 
+
+
+
 // Click popup with standardized attributes
+// Track the active popup globally
+let activePopup = null;
+
 map.on('click', 'thematic-fill', (e) => {
   const props = e.features[0].properties || {};
 
-  const id = props.ID || '';
   const name = props.Name || 'Unnamed Feature';
   const type = props.Type || '';
   const desc = props.Desc || '';
@@ -292,36 +297,40 @@ map.on('click', 'thematic-fill', (e) => {
   const image = props.Image || '';
   const link = props.Link || '';
 
-  // Parse Gallery field (JSON array of URLs)
+  // Parse Gallery field
   let galleryItems = [];
   if (props.Gallery) {
     try {
       const parsed = JSON.parse(props.Gallery);
       if (Array.isArray(parsed)) galleryItems = parsed;
     } catch {
-      // fallback if it's not valid JSON
       galleryItems = String(props.Gallery).split(/[;,]\s*/).filter(Boolean);
     }
+  }
+
+  // Always close the previous popup
+  if (activePopup) {
+    activePopup.remove();
+    activePopup = null;
   }
 
   // Build popup HTML
   const imageHTML = image
     ? `<img src="${image}" alt="${name}" style="max-width:100%; margin:6px 0;">`
     : '';
-
   const descHTML = desc ? `<p>${desc}</p>` : '';
   const longDescHTML = longDesc ? `<p>${longDesc}</p>` : '';
   const linkHTML = link ? `<p><a href="${link}" target="_blank" rel="noopener">More info</a></p>` : '';
-
   const galleryLinkHTML = galleryItems.length > 0
     ? `<p><a href="#" class="open-gallery">Open gallery</a></p>`
     : '';
 
-  new maplibregl.Popup({
+  // Create popup
+  activePopup = new maplibregl.Popup({
       closeButton: true,
       closeOnClick: true,
-      anchor: 'auto',       // auto‑flip to stay inside map
-      maxWidth: '300px'     // prevent overly wide popups
+      anchor: 'auto',
+      maxWidth: '300px'
     })
     .setLngLat(e.lngLat)
     .setHTML(`
@@ -335,23 +344,30 @@ map.on('click', 'thematic-fill', (e) => {
     `)
     .addTo(map);
 
-  // Attach Fancybox after popup is added
-  map.once('popupopen', () => {
-    const linkEl = document.querySelector('.mapboxgl-popup .open-gallery');
-    if (linkEl) {
-      linkEl.addEventListener('click', ev => {
-        ev.preventDefault();
-        Fancybox.show(
-          galleryItems.map(u => ({
-            src: u,
-            type: 'image',
-            caption: `<strong>${name}</strong><br>${longDesc || desc || ''}`
-          }))
-        );
-      });
-    }
-  });
+  // Attach Fancybox handler directly to this popup’s DOM
+  const popupEl = activePopup.getElement();
+  const linkEl = popupEl.querySelector('.open-gallery');
+  if (linkEl) {
+    linkEl.addEventListener('click', (ev) => {
+      ev.preventDefault();
+      console.log("Fancybox triggered for:", name, "with items:", galleryItems);
+      if (galleryItems.length === 0) return;
+      Fancybox.show(
+        galleryItems.map((u) => ({
+          src: u,
+          type: 'image',
+          caption: `<strong>${name}</strong><br>${longDesc || desc || ''}`
+        }))
+      );
+    });
+  }
 });
+
+
+
+
+
+
 
   map.on('mouseenter', 'thematic-fill', () => {
     map.getCanvas().style.cursor = 'pointer';
