@@ -7,8 +7,9 @@
   <meta name="description" content="Interactive campus map of HNBGU Chauras campus">
   <meta name="author" content="HNBGU GIS Team">
   <link rel="icon" type="image/png" href="https://hnbgu.ac.in/sites/default/files/HNBG-new-logo.png">
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.6.0/maplibre-gl.min.css" rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox.css"/>
+  <link href="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.css" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@4/dist/fancybox.css" />
+
   <style>
     body { margin: 0; padding: 0; display: flex; flex-direction: column; min-height: 100vh; }
 
@@ -170,8 +171,10 @@
   </p>
 </footer>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.6.0/maplibre-gl.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox.umd.js"></script>
+<!-- MapLibre GL JS -->
+<script src="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.js"></script>
+<!-- Fancybox v4 JS -->
+<script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@4/dist/fancybox.umd.js"></script>
 <script>
 try {
   const imageBounds = [
