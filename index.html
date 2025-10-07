@@ -269,6 +269,10 @@
   </p>
 </footer>
 
+
+
+
+
 <!-- MapLibre GL JS -->
 <script src="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.js"></script>
 <!-- Fancybox v4 JS -->
@@ -282,8 +286,8 @@
 <script>
 try {
   const imageBounds = [
-    [78.7832, 30.2080], // SW
-    [78.8246, 30.2440]  // NE
+    [78.796059, 30.219447], // SW
+    [78.809470, 30.228646]  // NE
   ];
 
   const map = new maplibregl.Map({
@@ -296,10 +300,10 @@ try {
           type: 'image',
           url: 'https://i.ibb.co/ymDTVGMz/Campus-Chauras-23-page-0001-Copy.jpg',
           coordinates: [
-            [78.7832, 30.2440], // NW
-            [78.8246, 30.2440], // NE
-            [78.8246, 30.2080], // SE
-            [78.7832, 30.2080]  // SW
+            [78.795866, 30.228428], // NW
+            [78.809470, 30.228646], // NE
+            [78.809662, 30.219675], // SE
+            [78.796059, 30.219447]  // SW
           ]
         },
         thematic: {
@@ -327,7 +331,7 @@ try {
         }
       ]
     },
-    center: [78.8039, 30.226],
+    center: [78.802764, 30.224047],
     zoom: 15,
     maxBounds: imageBounds
   });
@@ -335,8 +339,8 @@ try {
   map.on('load', () => {
     map.fitBounds(
       [
-        [78.7832, 30.2080],
-        [78.8246, 30.2440]
+      [78.796059, 30.219447], // SW
+      [78.809470, 30.228646]  // NE
       ],
       { padding: 20, animate: false }
     );
@@ -525,4 +529,3 @@ function togglePanel(panelClass) {
 
 </body>
 </html>
-
